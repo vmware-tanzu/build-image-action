@@ -1,0 +1,39 @@
+---
+name: 'build-image-action'
+description: 'https://github.com/vmware-tanzu/build-image-action'
+branding:
+  icon: 'tag'
+  color: 'blue'
+inputs:
+  # auth
+  server:
+    description: 'Address of the server to create the kpack resource'
+    required: true
+  token:
+    description: ''
+    required: true
+  ca_cert:  
+    description: ''
+    required: true
+  namespace:
+    description: 'Name of the developer workspace to perform builds'
+    required: true
+  # Image configuration  
+  destination:
+    description: 'The full name of the image name to be built'
+    required: true
+  serviceAccountName:
+    description: 'The name of the service account used to run the kpack build'
+    required: false
+    default: default
+  env:
+    description: 'Build arguments to be passed to the underlying kpack or kaniko build process'
+    required: false
+    default: ''
+outputs:
+  name:
+    description: 'The fully qualified name of the built image including version'
+runs:
+  using: 'docker'
+  image: 'docker://ghcr.io/vmware-tanzu/build-image-action:main'
+  entrypoint: 'github-actions-entrypoint.sh'
