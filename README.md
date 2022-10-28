@@ -8,20 +8,69 @@
 
 ## Try it out
 
-### Usage
+### Prerequisites
+
+1. Install and setup [kpack](https://github.com/pivotal/kpack/blob/main/docs/install.md) 
+1. Install [kpack cli](https://github.com/vmware-tanzu/kpack-cli/releases)
+1. Create dev namespace
+   ```bash
+   kubectl create namespace dev
+   ```
+1. Create a secret with push credentials for the docker registry that you plan on publishing OCI images to with kpack
+    ```bash
+   kubectl create secret docker-registry kpack-registry-credentials \                                                130 ↵ emjohnson@emjohnson-a03
+    --docker-username=_json_key \
+    --docker-password="$(cat key.json)" \
+    --docker-server=gcr.io \
+    --namespace dev
+    ```
+1. Create a ClusterBuilder (and ServiceAccount, ClusterStore, ClusterStack)
+    ```bash
+   ytt -v tag=<my-clusterbuilder-tag> -f hack/kpack.yaml | kubectl apply -f -
+   ```
+
+   For example:
+   ```bash
+   ytt -v tag=gcr.io/kontinue/emj/clusterbuilder -f hack/kpack.yaml | kubectl apply -f -
+   ```
+1. Get appropriate permissions to run
+    ```bash
+   kubectl apply -f config/rbac.yaml
+   eval "$(./config/get_auth.sh)"
+    ```
+
+## Usage
+
+### Run locally
+
+```bash
+NAMESPACE=dev GITHUB_SERVER_URL=https://github.com GITHUB_REPOSITORY=<my-repo> GITHUB_SHA=<my-sha> TAG=<my-tag> GITHUB_OUTPUT=<my-output> SERVICE_ACCOUNT_NAME=kpack-service-account go run main.go
+```
+
+For example:
+
+```bash
+NAMESPACE=dev GITHUB_SERVER_URL=https://github.com/emmjohnson GITHUB_REPOSITORY=github-actions-poc GITHUB_SHA=e84d037eedbbd7fefc8da0e2c7609e05faef5f0e TAG=gcr.io/kontinue/emj/app-action GITHUB_OUTPUT=/Users/emjohnson/sandbox/vmware-tanzu/build-image-action/output.txt SERVICE_ACCOUNT_NAME=kpack-service-account go run main.go
+kubectl get builds -n dev
+kubectl get pods -n dev
+cat /Users/emjohnson/sandbox/vmware-tanzu/build-image-action/output.txt
+name=gcr.io/kontinue/emj/app-action@sha256:a37e5abcefaa73417eff08f9771840460334d0543287a777c40d16f15ab0ecca
+```
+
+### Run as action
 
 #### Auth
 
-  - `server`: Host of the API Server.
-  - `ca-cert`: CA Certificate of the API Server.
-  - `token`: Service Account token to access kubernetes.
-  - `namespace`: _(required)_ The namespace to create the build resource in.
+- `server`: Host of the API Server.
+- `ca-cert`: CA Certificate of the API Server.
+- `token`: Service Account token to access kubernetes.
+- `namespace`: _(required)_ The namespace to create the build resource in.
 
 #### Image Configuration
 
-  - `destination`: _(required)_
-  - `env`:
-  - `serviceAccountName`: Name of the service account in the namespace, defaults to `default`
+- `destination`: _(required)_
+- `env`:
+- `serviceAccountName`: Name of the service account in the namespace, defaults to `default`
 
 #### Basic Configuration
 
@@ -43,7 +92,7 @@
 
 ##### Outputs
 
-  - `name`: The full name, including sha of the built image.
+- `name`: The full name, including sha of the built image.
 
 ##### Example
 
@@ -59,10 +108,10 @@ TODO
 
 ## Contributing
 
-The build-image-action project team welcomes contributions from the community. Before you start working with build-image-action, please
-read our [Developer Certificate of Origin](https://cla.vmware.com/dco). All contributions to this repository must be
-signed as described on that page. Your signature certifies that you wrote the patch or have the right to pass it on
-as an open-source patch. For more detailed information, refer to [CONTRIBUTING.md](CONTRIBUTING.md).
+The build-image-action project team welcomes contributions from the community. Before you start working with
+build-image-action, please read our [Developer Certificate of Origin](https://cla.vmware.com/dco). All contributions to
+this repository must be signed as described on that page. Your signature certifies that you wrote the patch or have the
+right to pass it on as an open-source patch. For more detailed information, refer to [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
