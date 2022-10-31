@@ -22,6 +22,7 @@
   - `destination`: _(required)_
   - `env`:
   - `serviceAccountName`: Name of the service account in the namespace, defaults to `default`
+  - `clusterBuilder`: Name of the cluster builder to use, defaults to `default`
 
 #### Basic Configuration
 
