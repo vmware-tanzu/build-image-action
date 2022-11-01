@@ -10,7 +10,7 @@
 
 ### Prerequisites
 
-1. Install and setup [kpack](https://github.com/pivotal/kpack/blob/main/docs/install.md) 
+1. Install and setup [kpack](https://github.com/pivotal/kpack/blob/main/docs/install.md)
 1. Install [kpack cli](https://github.com/vmware-tanzu/kpack-cli/releases)
 1. Create dev namespace
    ```bash
@@ -59,18 +59,52 @@ name=gcr.io/kontinue/emj/app-action@sha256:a37e5abcefaa73417eff08f9771840460334d
 
 ### Run as action
 
+
+### Setup
+
+In order to use this action a service account will need to exist inside TAP that has permissions to access the required resources. The 
+[example file](https://github.com/vmware-tanzu/build-image-action/blob/main/config/rbac.yaml) contains the minimum required permissions.
+
+To apply this file to a namespace called `dev`:
+
+```
+kubectl apply -f https://raw.githubusercontent.com/vmware-tanzu/build-image-action/main/config/rbac.yaml
+```
+
+Then to access the values:
+
+```
+SECRET=$(kubectl get sa github-actions -oyaml | yq '.secrets[0].name')
+
+CA_CERT=$(kubectl get secret $SECRET -oyaml | yq '.data."ca.crt"')
+NAMESPACE=$(kubectl get secret $SECRET -oyaml | ksd | yq .stringData.namespace)
+TOKEN=$(kubectl get secret $SECRET -oyaml | ksd | yq .stringData.token)
+SERVER=$(kubectl config view --minify | yq '.clusters[0].cluster.server')
+```
+
+Using the GitHub cli create the required secrets on the repository:
+
+```
+gh secret set CA_CERT --app actions --body "$CA_CERT"
+gh secret set NAMESPACE --app actions --body "$NAMESPACE"
+gh secret set TOKEN --app actions --body "$TOKEN"
+gh secret set SERVER --app actions --body "$SERVER"
+``` 
+
+### Usage
+
 #### Auth
 
-- `server`: Host of the API Server.
-- `ca-cert`: CA Certificate of the API Server.
-- `token`: Service Account token to access kubernetes.
-- `namespace`: _(required)_ The namespace to create the build resource in.
+  - `server`: Host of the API Server.
+  - `ca-cert`: CA Certificate of the API Server.
+  - `token`: Service Account token to access kubernetes.
+  - `namespace`: _(required)_ The namespace to create the build resource in.
 
 #### Image Configuration
 
-- `destination`: _(required)_
-- `env`:
-- `serviceAccountName`: Name of the service account in the namespace, defaults to `default`
+  - `destination`: _(required)_
+  - `env`:
+  - `serviceAccountName`: Name of the service account in the namespace, defaults to `default`
 
 #### Basic Configuration
 
@@ -92,7 +126,7 @@ name=gcr.io/kontinue/emj/app-action@sha256:a37e5abcefaa73417eff08f9771840460334d
 
 ##### Outputs
 
-- `name`: The full name, including sha of the built image.
+  - `name`: The full name, including sha of the built image.
 
 ##### Example
 
@@ -108,10 +142,10 @@ TODO
 
 ## Contributing
 
-The build-image-action project team welcomes contributions from the community. Before you start working with
-build-image-action, please read our [Developer Certificate of Origin](https://cla.vmware.com/dco). All contributions to
-this repository must be signed as described on that page. Your signature certifies that you wrote the patch or have the
-right to pass it on as an open-source patch. For more detailed information, refer to [CONTRIBUTING.md](CONTRIBUTING.md).
+The build-image-action project team welcomes contributions from the community. Before you start working with build-image-action, please
+read our [Developer Certificate of Origin](https://cla.vmware.com/dco). All contributions to this repository must be
+signed as described on that page. Your signature certifies that you wrote the patch or have the right to pass it on
+as an open-source patch. For more detailed information, refer to [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
