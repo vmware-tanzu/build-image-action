@@ -196,7 +196,6 @@ func main() {
 
 	for {
 		fmt.Printf("::debug:: checking if build is complete...\n")
-		fmt.Printf("::debug:: EMJ CLUSTER BUILDER %s...\n", clusterBuilderName)
 		var latestImage string
 		_, latestImage, err = GetBuild(ctx, dynamicClient, namespace, name)
 		if err != nil {

@@ -31,10 +31,11 @@ _List any tests that the contributor should run / or testing processes to follow
 
 ### Testing changes in poc
 1. Fork Gareth's poc - https://github.com/garethjevans/github-actions-poc
-1. TODO: Add steps to make poc usable
+   1. In `.github/workflows/supply-chain.yaml`, step `Build Image`, update `destination` with your registry
+   1. Create a Secret for `PRIVATE_REPO_ACCESS_TOKEN` with `read:packages, repo`
 1. Modify the `build-and-push` step in `.github/workflows/publish-image.yaml` to always push
 1. In `action.yml`, modify `runs.image` to point to the image that will be created in step 1
-1. In your poc, step `Check out source code`, add the appropriate ref
+1. In your poc, step `Check out source code`, add the appropriate `ref`
 1. In your poc, step `ghcr.io docker registry login`, change the `docker pull` command to point to the correct image created in step 1
 
 
