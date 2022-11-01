@@ -29,6 +29,15 @@ _Provide information about how someone can find your project, get set up, build 
 _List any tests that the contributor should run / or testing processes to follow before submitting. Describe any automated and manual checks performed by reviewers._
 
 
+### Testing changes in poc
+1. Fork Gareth's poc - https://github.com/garethjevans/github-actions-poc
+1. TODO: Add steps to make poc usable
+1. Modify the `build-and-push` step in `.github/workflows/publish-image.yaml` to always push
+1. In `action.yml`, modify `runs.image` to point to the image that will be created in step 1
+1. In your poc, step `Check out source code`, add the appropriate ref
+1. In your poc, step `ghcr.io docker registry login`, change the `docker pull` command to point to the correct image created in step 1
+
+
 ## Contribution Flow
 
 This is a rough outline of what a contributor's workflow looks like:
