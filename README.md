@@ -8,6 +8,37 @@
 
 ## Try it out
 
+### Setup
+
+In order to use this action a service account will need to exist inside TAP that has permissions to access the required resources. The 
+[example file](https://github.com/vmware-tanzu/build-image-action/blob/main/config/rbac.yaml) contains the minimum required permissions.
+
+To apply this file to a namespace called `dev`:
+
+```
+kubectl apply -f https://raw.githubusercontent.com/vmware-tanzu/build-image-action/main/config/rbac.yaml
+```
+
+Then to access the values:
+
+```
+SECRET=$(kubectl get sa github-actions -oyaml | yq '.secrets[0].name')
+
+CA_CERT=$(kubectl get secret $SECRET -oyaml | yq '.data."ca.crt"')
+NAMESPACE=$(kubectl get secret $SECRET -oyaml | ksd | yq .stringData.namespace)
+TOKEN=$(kubectl get secret $SECRET -oyaml | ksd | yq .stringData.token)
+SERVER=$(kubectl config view --minify | yq '.clusters[0].cluster.server')
+```
+
+Using the GitHub cli create the required secrets on the repository:
+
+```
+gh secret set CA_CERT --app actions --body "$CA_CERT"
+gh secret set NAMESPACE --app actions --body "$NAMESPACE"
+gh secret set TOKEN --app actions --body "$TOKEN"
+gh secret set SERVER --app actions --body "$SERVER"
+``` 
+
 ### Usage
 
 #### Auth
