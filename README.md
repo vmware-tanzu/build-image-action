@@ -50,7 +50,7 @@ NAMESPACE=dev GITHUB_SERVER_URL=https://github.com GITHUB_REPOSITORY=<my-repo> G
 For example:
 
 ```bash
-NAMESPACE=dev GITHUB_SERVER_URL=https://github.com/emmjohnson GITHUB_REPOSITORY=github-actions-poc GITHUB_SHA=e84d037eedbbd7fefc8da0e2c7609e05faef5f0e TAG=gcr.io/kontinue/emj/app-action GITHUB_OUTPUT=/Users/emjohnson/sandbox/vmware-tanzu/build-image-action/output.txt SERVICE_ACCOUNT_NAME=kpack-service-account go run main.go
+NAMESPACE=dev GITHUB_SERVER_URL=https://github.com GITHUB_REPOSITORY=emmjohnson/github-actions-poc GITHUB_SHA=e84d037eedbbd7fefc8da0e2c7609e05faef5f0e TAG=gcr.io/kontinue/emj/app-action GITHUB_OUTPUT=/Users/emjohnson/sandbox/vmware-tanzu/build-image-action/output.txt SERVICE_ACCOUNT_NAME=kpack-service-account go run main.go
 kubectl get builds -n dev
 kubectl get pods -n dev
 cat /Users/emjohnson/sandbox/vmware-tanzu/build-image-action/output.txt
