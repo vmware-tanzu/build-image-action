@@ -6,7 +6,6 @@
 
 This GitHub Action creates a TBS Build on the given cluster.
 
-
 ## Overview
 
 ## Try it out
