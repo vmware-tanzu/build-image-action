@@ -5,24 +5,22 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/vmware-tanzu/build-image-action/pkg"
+	"github.com/vmware-tanzu/build-image-action/cmd"
 	"github.com/vmware-tanzu/build-image-action/pkg/logs"
-	"github.com/vmware-tanzu/build-image-action/pkg/version"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"log"
 	"os"
-	"strings"
-	"time"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func main() {
+	cmd.Execute()
+}
 
 const sleepTimeBetweenChecks = 3
 
@@ -99,152 +97,152 @@ func GetBuild(ctx context.Context, client dynamic.Interface, namespace string, b
 	return podName, latestImage, statusMessage, nil
 }
 
-func main() {
-	caCert := os.Getenv("CA_CERT")
-	server := os.Getenv("SERVER")
-	namespace := MustGetEnv("NAMESPACE")
-	token := os.Getenv("TOKEN")
-
-	gitRepo := fmt.Sprintf("%s/%s", MustGetEnv("GITHUB_SERVER_URL"), MustGetEnv("GITHUB_REPOSITORY"))
-	gitSha := MustGetEnv("GITHUB_SHA")
-	tag := MustGetEnv("TAG")
-	env := os.Getenv("ENV_VARS")
-	serviceAccountName := os.Getenv("SERVICE_ACCOUNT_NAME")
-	githubOutput := MustGetEnv("GITHUB_OUTPUT")
-
-	fmt.Println("::debug:: tag", tag)
-	fmt.Println("::debug:: namespace", namespace)
-	fmt.Println("::debug:: gitRepo", gitRepo)
-	fmt.Println("::debug:: gitSha", gitSha)
-	fmt.Println("::debug:: env", env)
-	fmt.Println("::debug:: serviceAccountName", serviceAccountName)
-
-	decodedCaCert, err := base64.StdEncoding.DecodeString(caCert)
-	if err != nil {
-		panic(err)
-	}
-
-	var config *rest.Config
-
-	if caCert == "" && server == "" && token == "" {
-		// assume we are currently running inside the cluster we want to create the image resource in
-		config, err = rest.InClusterConfig()
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		config = &rest.Config{
-			TLSClientConfig: rest.TLSClientConfig{
-				CAData: decodedCaCert,
-			},
-			Host:        server,
-			BearerToken: token,
-		}
-	}
-
-	ctx := context.Background()
-
-	dynamicClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		panic(err)
-	}
-
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		panic(err)
-	}
-
-	clusterBuilder, runImage, err := GetClusterBuilder(ctx, dynamicClient, "default")
-	if err != nil {
-		panic(err)
-	}
-
-	build := &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"apiVersion": "kpack.io/v1alpha2",
-			"kind":       "Build",
-			"metadata": map[string]interface{}{
-				"generateName": strings.ReplaceAll(MustGetEnv("GITHUB_REPOSITORY"), "/", "-") + "-",
-				"namespace":    namespace,
-				"annotations": map[string]interface{}{
-					"app.kubernetes.io/managed-by": "vmware-tanzu/build-image-action " + version.Version,
-				},
-			},
-			"spec": map[string]interface{}{
-				"builder": map[string]interface{}{
-					"image": clusterBuilder,
-				},
-				"runImage": map[string]interface{}{
-					"image": runImage,
-				},
-				"serviceAccountName": serviceAccountName,
-				"source": map[string]interface{}{
-					"git": map[string]interface{}{
-						"url":      gitRepo,
-						"revision": gitSha,
-					},
-				},
-				"tags": []string{
-					tag,
-				},
-				"env": KeyValueArray(pkg.ParseEnvVars(env)),
-			},
-		},
-	}
-
-	name, err := CreateBuild(ctx, dynamicClient, namespace, build)
-	if err != nil {
-		panic(err)
-	}
-
-	for {
-		var podName string
-		var statusMessage string
-		podName, _, statusMessage, err = GetBuild(ctx, dynamicClient, namespace, name)
-		if err != nil {
-			panic(err)
-		}
-
-		if statusMessage != "" {
-			panic(statusMessage)
-		}
-
-		if podName != "" {
-			fmt.Printf("::debug:: build has started\n")
-			fmt.Printf("::debug:: Building... podName=%s, starting streaming\n", podName)
-			StreamPodLogs(ctx, client, namespace, podName)
-			break
-		}
-
-		time.Sleep(sleepTimeBetweenChecks * time.Second)
-	}
-
-	for {
-		fmt.Printf("::debug:: checking if build is complete...\n")
-		var latestImage string
-		var statusMessage string
-		_, latestImage, statusMessage, err = GetBuild(ctx, dynamicClient, namespace, name)
-		if err != nil {
-			panic(err)
-		}
-
-		if statusMessage != "" {
-			panic(statusMessage)
-		}
-
-		if latestImage != "" {
-			fmt.Printf("::debug:: build is complete\n")
-
-			err = Append(githubOutput, fmt.Sprintf("name=%s\n", latestImage))
-			if err != nil {
-				panic(err)
-			}
-			break
-		}
-
-		time.Sleep(sleepTimeBetweenChecks * time.Second)
-	}
-}
+//func main() {
+//	caCert := os.Getenv("CA_CERT")
+//	server := os.Getenv("SERVER")
+//	namespace := MustGetEnv("NAMESPACE")
+//	token := os.Getenv("TOKEN")
+//
+//	gitRepo := fmt.Sprintf("%s/%s", MustGetEnv("GITHUB_SERVER_URL"), MustGetEnv("GITHUB_REPOSITORY"))
+//	gitSha := MustGetEnv("GITHUB_SHA")
+//	tag := MustGetEnv("TAG")
+//	env := os.Getenv("ENV_VARS")
+//	serviceAccountName := os.Getenv("SERVICE_ACCOUNT_NAME")
+//	githubOutput := MustGetEnv("GITHUB_OUTPUT")
+//
+//	fmt.Println("::debug:: tag", tag)
+//	fmt.Println("::debug:: namespace", namespace)
+//	fmt.Println("::debug:: gitRepo", gitRepo)
+//	fmt.Println("::debug:: gitSha", gitSha)
+//	fmt.Println("::debug:: env", env)
+//	fmt.Println("::debug:: serviceAccountName", serviceAccountName)
+//
+//	decodedCaCert, err := base64.StdEncoding.DecodeString(caCert)
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	var config *rest.Config
+//
+//	if caCert == "" && server == "" && token == "" {
+//		// assume we are currently running inside the cluster we want to create the image resource in
+//		config, err = rest.InClusterConfig()
+//		if err != nil {
+//			panic(err)
+//		}
+//	} else {
+//		config = &rest.Config{
+//			TLSClientConfig: rest.TLSClientConfig{
+//				CAData: decodedCaCert,
+//			},
+//			Host:        server,
+//			BearerToken: token,
+//		}
+//	}
+//
+//	ctx := context.Background()
+//
+//	dynamicClient, err := dynamic.NewForConfig(config)
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	client, err := kubernetes.NewForConfig(config)
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	clusterBuilder, runImage, err := GetClusterBuilder(ctx, dynamicClient, "default")
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	build := &unstructured.Unstructured{
+//		Object: map[string]interface{}{
+//			"apiVersion": "kpack.io/v1alpha2",
+//			"kind":       "Build",
+//			"metadata": map[string]interface{}{
+//				"generateName": strings.ReplaceAll(MustGetEnv("GITHUB_REPOSITORY"), "/", "-") + "-",
+//				"namespace":    namespace,
+//				"annotations": map[string]interface{}{
+//					"app.kubernetes.io/managed-by": "vmware-tanzu/build-image-action " + version.Version,
+//				},
+//			},
+//			"spec": map[string]interface{}{
+//				"builder": map[string]interface{}{
+//					"image": clusterBuilder,
+//				},
+//				"runImage": map[string]interface{}{
+//					"image": runImage,
+//				},
+//				"serviceAccountName": serviceAccountName,
+//				"source": map[string]interface{}{
+//					"git": map[string]interface{}{
+//						"url":      gitRepo,
+//						"revision": gitSha,
+//					},
+//				},
+//				"tags": []string{
+//					tag,
+//				},
+//				"env": KeyValueArray(pkg.ParseEnvVars(env)),
+//			},
+//		},
+//	}
+//
+//	name, err := CreateBuild(ctx, dynamicClient, namespace, build)
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	for {
+//		var podName string
+//		var statusMessage string
+//		podName, _, statusMessage, err = GetBuild(ctx, dynamicClient, namespace, name)
+//		if err != nil {
+//			panic(err)
+//		}
+//
+//		if statusMessage != "" {
+//			panic(statusMessage)
+//		}
+//
+//		if podName != "" {
+//			fmt.Printf("::debug:: build has started\n")
+//			fmt.Printf("::debug:: Building... podName=%s, starting streaming\n", podName)
+//			StreamPodLogs(ctx, client, namespace, podName)
+//			break
+//		}
+//
+//		time.Sleep(sleepTimeBetweenChecks * time.Second)
+//	}
+//
+//	for {
+//		fmt.Printf("::debug:: checking if build is complete...\n")
+//		var latestImage string
+//		var statusMessage string
+//		_, latestImage, statusMessage, err = GetBuild(ctx, dynamicClient, namespace, name)
+//		if err != nil {
+//			panic(err)
+//		}
+//
+//		if statusMessage != "" {
+//			panic(statusMessage)
+//		}
+//
+//		if latestImage != "" {
+//			fmt.Printf("::debug:: build is complete\n")
+//
+//			err = Append(githubOutput, fmt.Sprintf("name=%s\n", latestImage))
+//			if err != nil {
+//				panic(err)
+//			}
+//			break
+//		}
+//
+//		time.Sleep(sleepTimeBetweenChecks * time.Second)
+//	}
+//}
 
 func KeyValueArray(vars map[string]string) []map[string]string {
 	var values []map[string]string

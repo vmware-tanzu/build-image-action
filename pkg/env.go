@@ -3,7 +3,11 @@
 
 package pkg
 
-import "strings"
+import (
+	"log"
+	"os"
+	"strings"
+)
 
 func ParseEnvVars(in string) map[string]string {
 	m := make(map[string]string)
@@ -16,4 +20,12 @@ func ParseEnvVars(in string) map[string]string {
 	}
 
 	return m
+}
+
+func MustGetEnv(name string) string {
+	val := os.Getenv(name)
+	if val == "" {
+		log.Fatalf("Environment Var %s must be set", name)
+	}
+	return val
 }
