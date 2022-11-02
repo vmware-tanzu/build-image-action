@@ -4,6 +4,9 @@
 [![golangci-lint](https://github.com/vmware-tanzu/build-image-action/actions/workflows/golangci-lint.yml/badge.svg)](https://github.com/vmware-tanzu/build-image-action/actions/workflows/golangci-lint.yml)
 [![Build and Publish](https://github.com/vmware-tanzu/build-image-action/actions/workflows/publish-image.yaml/badge.svg)](https://github.com/vmware-tanzu/build-image-action/actions/workflows/publish-image.yaml)
 
+This GitHub Action creates a TBS Build on the given cluster.
+
+
 ## Overview
 
 ## Try it out
@@ -24,11 +27,11 @@ kubectl apply -f https://raw.githubusercontent.com/vmware-tanzu/build-image-acti
 Then to access the values:
 
 ```
-SECRET=$(kubectl get sa github-actions -oyaml | yq '.secrets[0].name')
+SECRET=$(kubectl get sa github-actions -oyaml -n dev | yq '.secrets[0].name')
 
-CA_CERT=$(kubectl get secret $SECRET -oyaml | yq '.data."ca.crt"')
-NAMESPACE=$(kubectl get secret $SECRET -oyaml | ksd | yq .stringData.namespace)
-TOKEN=$(kubectl get secret $SECRET -oyaml | ksd | yq .stringData.token)
+CA_CERT=$(kubectl get secret $SECRET -oyaml -n dev | yq '.data."ca.crt"')
+NAMESPACE=$(kubectl get secret $SECRET -oyaml -n dev | ksd | yq .stringData.namespace)
+TOKEN=$(kubectl get secret $SECRET -oyaml -n dev | ksd | yq .stringData.token)
 SERVER=$(kubectl config view --minify | yq '.clusters[0].cluster.server')
 ```
 
@@ -100,4 +103,4 @@ as an open-source patch. For more detailed information, refer to [CONTRIBUTING.m
 
 ## License
 
-TODO The scripts and documentation in this project are released under the [Apache 2](LICENSE).
+The scripts and documentation in this project are released under the [Apache 2](LICENSE).

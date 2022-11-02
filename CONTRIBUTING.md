@@ -1,7 +1,5 @@
 # Contributing to build-image-action
 
-_NOTE: This is a template document that requires editing before it is ready to use!_
-
 We welcome contributions from the community and first want to thank you for taking the time to contribute!
 
 Please familiarize yourself with the [Code of Conduct](https://github.com/vmware/.github/blob/main/CODE_OF_CONDUCT.md)
@@ -14,7 +12,7 @@ about the CLA process, please refer to our [FAQ]([https://cla.vmware.com/faq](ht
 
 ## Ways to contribute
 
-We welcome many different types of contributions and not all of them need a Pull request. Contributions may include:
+We welcome many types of contributions and not all of them need a Pull request. Contributions may include:
 
 * New features and proposals
 * Documentation
@@ -25,16 +23,6 @@ We welcome many different types of contributions and not all of them need a Pull
 * Other related activities
 
 ## Getting started
-
-_TO BE EDITED: This section explains how to build the project from source, including Development Environment Setup,
-Build, Run and Test._
-
-_Provide information about how someone can find your project, get set up, build the code, test it, and submit a pull
-request successfully without having to ask any questions. Also include common errors people run into, or useful scripts
-they should run._
-
-_List any tests that the contributor should run / or testing processes to follow before submitting. Describe any
-automated and manual checks performed by reviewers._
 
 ### Prerequisites
 
@@ -77,7 +65,7 @@ NAMESPACE=dev GITHUB_SERVER_URL=https://github.com GITHUB_REPOSITORY=<my-repo> G
 For example:
 
 ```bash
-NAMESPACE=dev GITHUB_SERVER_URL=https://github.com/emmjohnson GITHUB_REPOSITORY=github-actions-poc GITHUB_SHA=e84d037eedbbd7fefc8da0e2c7609e05faef5f0e TAG=gcr.io/kontinue/emj/app-action GITHUB_OUTPUT=/Users/emjohnson/sandbox/vmware-tanzu/build-image-action/output.txt SERVICE_ACCOUNT_NAME=kpack-service-account go run main.go
+NAMESPACE=dev GITHUB_SERVER_URL=https://github.com GITHUB_REPOSITORY=emmjohnson/github-actions-poc GITHUB_SHA=e84d037eedbbd7fefc8da0e2c7609e05faef5f0e TAG=gcr.io/kontinue/emj/app-action GITHUB_OUTPUT=/Users/emjohnson/sandbox/vmware-tanzu/build-image-action/output.txt SERVICE_ACCOUNT_NAME=kpack-service-account go run main.go
 kubectl get builds -n dev
 kubectl get pods -n dev
 cat /Users/emjohnson/sandbox/vmware-tanzu/build-image-action/output.txt
@@ -119,19 +107,8 @@ Before submitting your pull request, we advise you to use the following:
 For specifics on what to include in your report, please follow the guidelines in the issue and pull request templates
 when available.
 
-_TO BE EDITED: Add additional information if needed._
-
 ## Ask for Help
-
-_TO BE EDITED: Provide information about the channels you use to communicate (i.e. Slack, IRC, Discord, etc)_
 
 The best way to reach us with a question when contributing is to ask on:
 
 * The original GitHub issue
-* The developer mailing list
-* Our Slack channel
-
-## Additional Resources
-
-_Optional_
-
