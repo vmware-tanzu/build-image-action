@@ -5,16 +5,12 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/pkg/errors"
 	"github.com/vmware-tanzu/build-image-action/cmd"
-	"github.com/vmware-tanzu/build-image-action/pkg/logs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
-	"log"
 	"os"
 )
 
@@ -28,34 +24,6 @@ var (
 	v1alpha2Builds         = schema.GroupVersionResource{Group: "kpack.io", Version: "v1alpha2", Resource: "builds"}
 	v1alpha2ClusterBuilder = schema.GroupVersionResource{Group: "kpack.io", Version: "v1alpha2", Resource: "clusterbuilders"}
 )
-
-func GetClusterBuilder(ctx context.Context, client dynamic.Interface, name string) (string, string, error) {
-	clusterBuilder, err := client.Resource(v1alpha2ClusterBuilder).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return "", "", err
-	}
-
-	clusterBuilderName, _, err := unstructured.NestedString(clusterBuilder.Object, "status", "latestImage")
-	if err != nil {
-		return "", "", err
-	}
-
-	runImage, _, err := unstructured.NestedString(clusterBuilder.Object, "status", "stack", "runImage")
-	if err != nil {
-		return "", "", err
-	}
-	return clusterBuilderName, runImage, nil
-}
-
-func CreateBuild(ctx context.Context, client dynamic.Interface, namespace string, build *unstructured.Unstructured) (string, error) {
-	fmt.Printf("::debug:: creating resource %+v\n", build)
-	created, err := client.Resource(v1alpha2Builds).Namespace(namespace).Create(ctx, build, metav1.CreateOptions{})
-	if err != nil {
-		return "", err
-	}
-
-	return created.GetName(), nil
-}
 
 func GetBuild(ctx context.Context, client dynamic.Interface, namespace string, build string) (string, string, string, error) {
 	got, err := client.Resource(v1alpha2Builds).Namespace(namespace).Get(ctx, build, metav1.GetOptions{})
@@ -243,34 +211,6 @@ func GetBuild(ctx context.Context, client dynamic.Interface, namespace string, b
 //		time.Sleep(sleepTimeBetweenChecks * time.Second)
 //	}
 //}
-
-func KeyValueArray(vars map[string]string) []map[string]string {
-	var values []map[string]string
-	for k, v := range vars {
-		values = append(values, map[string]string{"name": k, "value": v})
-	}
-
-	fmt.Printf("::debug:: parsed environment variables to %s\n", values)
-	return values
-}
-
-func StreamPodLogs(ctx context.Context, clientSet *kubernetes.Clientset, namespace string, podName string) {
-	go func() {
-		st := logs.SternTailer{}
-		err := st.Tail(ctx, clientSet, namespace, podName)
-		if err != nil {
-			log.Fatalf("issue streaming logs: %s", err)
-		}
-	}()
-}
-
-func MustGetEnv(name string) string {
-	val := os.Getenv(name)
-	if val == "" {
-		log.Fatalf("Environment Var %s must be set", name)
-	}
-	return val
-}
 
 func Append(file string, name string) error {
 	const filePermissions = 0644
