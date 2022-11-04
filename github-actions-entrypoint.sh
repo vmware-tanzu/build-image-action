@@ -10,5 +10,5 @@ export TAG=${INPUT_DESTINATION}
 export ENV_VARS=${INPUT_ENV}
 export SERVICE_ACCOUNT_NAME=${INPUT_SERVICEACCOUNTNAME}
 
-/usr/bin/builder
+/usr/bin/builder kpack
 
