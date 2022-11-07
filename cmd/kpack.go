@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/vmware-tanzu/build-image-action/pkg/kpack"
-	"log"
-	"os"
 )
 
 func init() {
@@ -56,12 +54,4 @@ func NewKpackCmd() *cobra.Command {
 	_ = kpackCmd.MarkFlagRequired("github-action-output")
 
 	return kpackCmd
-}
-
-func MustGetEnv(name string) string {
-	val := os.Getenv(name)
-	if val == "" {
-		log.Fatalf("Environment Var %s must be set", name)
-	}
-	return val
 }
