@@ -12,6 +12,7 @@ set -euo pipefail
   --namespace="${INPUT_NAMESPACE}" \
   --tag="${INPUT_DESTINATION}" \
   --env-vars="${INPUT_ENV}" \
-  --service-account-name="${INPUT_SERVICEACCOUNTNAME}"
+  --service-account-name="${INPUT_SERVICEACCOUNTNAME}" \
+  --cluster-builder="${INPUT_CLUSTERBUILDER}"
 
 

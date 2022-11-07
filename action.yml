@@ -27,9 +27,13 @@ inputs:
     required: false
     default: default
   env:
-    description: 'Build arguments to be passed to the underlying kpack or kaniko build process'
+    description: 'Build arguments to be passed to the underlying kpack build process'
     required: false
     default: ''
+  clusterBuilder:
+    description: 'The name of the cluster Builder used to run the kpack build'
+    required: false
+    default: default
 outputs:
   name:
     description: 'The fully qualified name of the built image including version'
