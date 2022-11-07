@@ -185,9 +185,9 @@ func (c *Config) Build() {
 	}
 }
 
-func GetClusterBuilderStatus(ctx context.Context, client client.Client, name string) (string, string, error) {
+func GetClusterBuilderStatus(ctx context.Context, cl client.Client, name string) (string, string, error) {
 	builder := &v1alpha2.ClusterBuilder{}
-	err := client.Get(ctx, types.NamespacedName{Name: name}, builder)
+	err := cl.Get(ctx, types.NamespacedName{Name: name}, builder)
 	if err != nil {
 		return "", "", err
 	}
@@ -195,10 +195,10 @@ func GetClusterBuilderStatus(ctx context.Context, client client.Client, name str
 	return builder.Status.LatestImage, builder.Status.Stack.RunImage, nil
 }
 
-func CreateBuild(ctx context.Context, client client.Client, build *v1alpha2.Build) (string, error) {
+func CreateBuild(ctx context.Context, cl client.Client, build *v1alpha2.Build) (string, error) {
 	fmt.Printf("::debug:: creating resource %+v\n", build)
 
-	err := client.Create(ctx, build)
+	err := cl.Create(ctx, build)
 	if err != nil {
 		return "", err
 	}
@@ -206,9 +206,9 @@ func CreateBuild(ctx context.Context, client client.Client, build *v1alpha2.Buil
 	return build.GetName(), nil
 }
 
-func GetBuildStatus(ctx context.Context, client client.Client, namespace string, name string) (string, string, string, error) {
+func GetBuildStatus(ctx context.Context, cl client.Client, namespace string, name string) (string, string, string, error) {
 	build := &v1alpha2.Build{}
-	err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, build)
+	err := cl.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, build)
 	if err != nil {
 		return "", "", "", err
 	}
