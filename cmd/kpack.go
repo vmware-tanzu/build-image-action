@@ -50,7 +50,7 @@ func NewKpackCmd() *cobra.Command {
 	_ = kpackCmd.MarkFlagRequired("tag")
 	kpackCmd.Flags().StringVarP(&c.Env, "env-vars", "e", "", "list of build time environment variables")
 	kpackCmd.Flags().StringVarP(&c.ServiceAccountName, "service-account-name", "a", "default", "service account name that will be used for credential lookup")
-	kpackCmd.Flags().StringVarP(&c.ServiceAccountName, "cluster-builder", "b", "default", "cluster builder to use for the build")
+	kpackCmd.Flags().StringVarP(&c.ClusterBuilderName, "cluster-builder", "b", "default", "cluster builder to use for the build")
 
 	kpackCmd.Flags().StringVarP(&c.ActionOutput, "github-action-output", "o", "", "location to store output of the build")
 	_ = kpackCmd.MarkFlagRequired("github-action-output")
