@@ -94,7 +94,7 @@ func (c *Config) Build() {
 		panic(err)
 	}
 
-	clusterBuilder, runImage, err := GetClusterBuilder(ctx, client, c.ClusterBuilderName)
+	clusterBuilder, runImage, err := GetClusterBuilderStatus(ctx, client, c.ClusterBuilderName)
 	if err != nil {
 		panic(err)
 	}
