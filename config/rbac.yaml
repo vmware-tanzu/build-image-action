@@ -58,4 +58,4 @@ rules:
 - apiGroups: ['kpack.io']
   resources:
   - builds
-  verbs: ['get', 'watch', 'list', 'create']
+  verbs: ['get', 'watch', 'list', 'create', 'delete']
