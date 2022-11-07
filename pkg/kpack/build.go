@@ -13,6 +13,7 @@ import (
 	"github.com/vmware-tanzu/build-image-action/pkg/logs"
 	"github.com/vmware-tanzu/build-image-action/pkg/version"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -76,7 +77,11 @@ func (c *Config) Build() {
 
 	ctx := context.Background()
 
-	client, err := client.New(config, client.Options{})
+	restMapper := meta.NewDefaultRESTMapper([]schema.GroupVersion{})
+	restMapper.Add(schema.GroupVersionKind{Group: "kpack.io", Version: "v1alpha2", Kind: "ClusterBuilder"}, meta.RESTScopeRoot)
+	restMapper.Add(schema.GroupVersionKind{Group: "kpack.io", Version: "v1alpha2", Kind: "Build"}, meta.RESTScopeNamespace)
+
+	client, err := client.New(config, client.Options{Mapper: restMapper})
 	if err != nil {
 		panic(err)
 	}
