@@ -97,7 +97,13 @@ func (c *Config) Build() {
 				"generateName": strings.ReplaceAll(c.GitRepo, "/", "-") + "-",
 				"namespace":    c.Namespace,
 				"annotations": map[string]interface{}{
-					"app.kubernetes.io/managed-by": "vmware-tanzu/build-image-action " + version.Version,
+					"actions.github.com/actions": fmt.Sprintf("%s/%s/actions/runs/%s", c.GitServer, c.GitRepo, os.Getenv("GITHUB_RUN_ID")),
+				},
+				"labels": map[string]interface{}{
+					"app.kubernetes.io/managed-by":           "vmware-tanzu-build-image-action",
+					"actions.github.com/provided-by":         "vmware-tanzu-build-image-action",
+					"actions.github.com/provided-by-version": version.Version,
+					"actions.github.com/build-id":            os.Getenv("GITHUB_RUN_ID"),
 				},
 			},
 			"spec": map[string]interface{}{
