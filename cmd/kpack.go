@@ -38,20 +38,20 @@ func NewKpackCmd() *cobra.Command {
 	kpackCmd.MarkFlagsRequiredTogether("ca-cert", "token", "server")
 
 	kpackCmd.Flags().StringVarP(&c.Namespace, "namespace", "n", "", "kubernetes namespace to create the build")
-	kpackCmd.MarkFlagRequired("namespace")
+	_ = kpackCmd.MarkFlagRequired("namespace")
 	kpackCmd.Flags().StringVarP(&c.GitServer, "github-server-url", "u", "", "github server url for the source location")
-	kpackCmd.MarkFlagRequired("github-server-url")
+	_ = kpackCmd.MarkFlagRequired("github-server-url")
 	kpackCmd.Flags().StringVarP(&c.GitRepo, "github-repository", "r", "", "github repository for the source location")
-	kpackCmd.MarkFlagRequired("github-repository")
+	_ = kpackCmd.MarkFlagRequired("github-repository")
 	kpackCmd.Flags().StringVar(&c.GitSha, "github-sha", "", "sha of source to build")
-	kpackCmd.MarkFlagRequired("github-sha")
+	_ = kpackCmd.MarkFlagRequired("github-sha")
 	kpackCmd.Flags().StringVar(&c.Tag, "tag", "", "docker tag to build")
-	kpackCmd.MarkFlagRequired("tag")
+	_ = kpackCmd.MarkFlagRequired("tag")
 	kpackCmd.Flags().StringVarP(&c.Env, "env-vars", "e", "", "list of build time environment variables")
 	kpackCmd.Flags().StringVarP(&c.ServiceAccountName, "service-account-name", "a", "", "service account name that will be used for credential lookup")
 
 	kpackCmd.Flags().StringVarP(&c.ActionOutput, "github-action-output", "o", "", "location to store output of the build")
-	kpackCmd.MarkFlagRequired("github-action-output")
+	_ = kpackCmd.MarkFlagRequired("github-action-output")
 
 	return kpackCmd
 }
