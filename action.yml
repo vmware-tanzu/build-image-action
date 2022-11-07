@@ -39,5 +39,5 @@ outputs:
     description: 'The fully qualified name of the built image including version'
 runs:
   using: 'docker'
-  image: 'docker://ghcr.io/vmware-tanzu/build-image-action:main'
+  image: 'docker://ghcr.io/vmware-tanzu/build-image-action:pr-18'
   entrypoint: 'github-actions-entrypoint.sh'
