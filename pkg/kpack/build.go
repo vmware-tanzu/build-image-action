@@ -44,6 +44,7 @@ type Config struct {
 	Env                string
 	ServiceAccountName string
 	ClusterBuilderName string
+	Timeout            int
 
 	ActionOutput string
 }
@@ -101,6 +102,7 @@ func (c *Config) Build() {
 				},
 			},
 			"spec": map[string]interface{}{
+				"activeDeadlineSeconds": c.Timeout,
 				"builder": map[string]interface{}{
 					"image": clusterBuilder,
 				},
