@@ -182,7 +182,7 @@ func GetClusterBuilder(ctx context.Context, client dynamic.Interface, name strin
 		return "", "", err
 	}
 
-	clusterBuilderName, _, err := unstructured.NestedString(clusterBuilder.Object, "status", "latestImage")
+	latestImage, _, err := unstructured.NestedString(clusterBuilder.Object, "status", "latestImage")
 	if err != nil {
 		return "", "", err
 	}
@@ -191,7 +191,10 @@ func GetClusterBuilder(ctx context.Context, client dynamic.Interface, name strin
 	if err != nil {
 		return "", "", err
 	}
-	return clusterBuilderName, runImage, nil
+
+	fmt.Printf("::debug:: using cluster builder image %s\n", latestImage)
+	fmt.Printf("::debug:: using cluster builder run image %+v\n", runImage)
+	return latestImage, runImage, nil
 }
 
 func CreateBuild(ctx context.Context, client dynamic.Interface, namespace string, build *unstructured.Unstructured) (string, error) {
