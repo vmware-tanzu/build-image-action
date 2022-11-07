@@ -111,6 +111,7 @@ func main() {
 	env := os.Getenv("ENV_VARS")
 	serviceAccountName := os.Getenv("SERVICE_ACCOUNT_NAME")
 	githubOutput := MustGetEnv("GITHUB_OUTPUT")
+	clusterBuilderName := os.Getenv("CLUSTER_BUILDER")
 
 	fmt.Println("::debug:: tag", tag)
 	fmt.Println("::debug:: namespace", namespace)
@@ -118,6 +119,7 @@ func main() {
 	fmt.Println("::debug:: gitSha", gitSha)
 	fmt.Println("::debug:: env", env)
 	fmt.Println("::debug:: serviceAccountName", serviceAccountName)
+	fmt.Println("::debug:: clusterBuilder", clusterBuilderName)
 
 	decodedCaCert, err := base64.StdEncoding.DecodeString(caCert)
 	if err != nil {
@@ -154,7 +156,7 @@ func main() {
 		panic(err)
 	}
 
-	clusterBuilder, runImage, err := GetClusterBuilder(ctx, dynamicClient, "default")
+	clusterBuilder, runImage, err := GetClusterBuilder(ctx, dynamicClient, clusterBuilderName)
 	if err != nil {
 		panic(err)
 	}
