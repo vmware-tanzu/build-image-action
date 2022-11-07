@@ -142,10 +142,53 @@ func (c *Config) Build() error {
 		return err
 	}
 
+	err = WaitForBuildToStart(ctx, cl, clientset, c.Namespace, name)
+	if err != nil {
+		return err
+	}
+
+	latestImage, err := WaitForBuildToComplete(ctx, cl, c.Namespace, name)
+	if err != nil {
+		return err
+	}
+
+	err = Append(c.ActionOutput, fmt.Sprintf("name=%s\n", latestImage))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func WaitForBuildToComplete(ctx context.Context, cl client.Client, namespace string, name string) (string, error) {
+	var latestImage string
 	for {
-		var podName string
+		fmt.Printf("::debug:: checking if build is complete...\n")
 		var statusMessage string
-		podName, _, statusMessage, err = GetBuildStatus(ctx, cl, c.Namespace, name)
+		var err error
+		_, latestImage, statusMessage, err = GetBuildStatus(ctx, cl, namespace, name)
+		if err != nil {
+			return "", err
+		}
+
+		if statusMessage != "" {
+			return "", errors.New(statusMessage)
+		}
+
+		if latestImage != "" {
+			fmt.Printf("::debug:: build is complete\n")
+			fmt.Printf("::debug:: latestImage=%s\n", latestImage)
+			break
+		}
+
+		time.Sleep(sleepTimeBetweenChecks * time.Second)
+	}
+	return latestImage, nil
+}
+
+func WaitForBuildToStart(ctx context.Context, cl client.Client, clientset *kubernetes.Clientset, namespace string, name string) error {
+	for {
+		podName, _, statusMessage, err := GetBuildStatus(ctx, cl, namespace, name)
 		if err != nil {
 			return err
 		}
@@ -156,40 +199,13 @@ func (c *Config) Build() error {
 
 		if podName != "" {
 			fmt.Printf("::debug:: build has started\n")
-			fmt.Printf("::debug:: Building... podName=%s, starting streaming\n", podName)
-			StreamPodLogs(ctx, clientset, c.Namespace, podName)
+			fmt.Printf("::debug:: building... podName=%s, starting streaming\n", podName)
+			StreamPodLogs(ctx, clientset, namespace, podName)
 			break
 		}
 
 		time.Sleep(sleepTimeBetweenChecks * time.Second)
 	}
-
-	for {
-		fmt.Printf("::debug:: checking if build is complete...\n")
-		var latestImage string
-		var statusMessage string
-		_, latestImage, statusMessage, err = GetBuildStatus(ctx, cl, c.Namespace, name)
-		if err != nil {
-			return err
-		}
-
-		if statusMessage != "" {
-			return errors.New(statusMessage)
-		}
-
-		if latestImage != "" {
-			fmt.Printf("::debug:: build is complete\n")
-
-			err = Append(c.ActionOutput, fmt.Sprintf("name=%s\n", latestImage))
-			if err != nil {
-				return err
-			}
-			break
-		}
-
-		time.Sleep(sleepTimeBetweenChecks * time.Second)
-	}
-
 	return nil
 }
 
@@ -211,26 +227,25 @@ func CreateBuild(ctx context.Context, cl client.Client, build *v1alpha2.Build) (
 		return "", err
 	}
 
+	fmt.Printf("::debug:: created build=%s/%s\n", build.Namespace, build.Name)
 	return build.GetName(), nil
 }
 
-func DeleteBuild(ctx context.Context, cl client.Client, namespace string, name string) error {
+func DeleteBuild(ctx context.Context, cl client.Client, namespace string, name string) {
 	fmt.Printf("::debug:: deleting build %s/%s\n", namespace, name)
 
 	build := &v1alpha2.Build{}
 	err := cl.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, build)
 	if err != nil {
 		fmt.Printf("::debug:: error getting build: %+v\n", err)
-		return err
+		return
 	}
 
 	err = cl.Delete(ctx, build)
 	if err != nil {
 		fmt.Printf("::debug:: error deleting build %+v\n", err)
-		return err
+		return
 	}
-
-	return nil
 }
 
 func GetBuildStatus(ctx context.Context, cl client.Client, namespace string, name string) (string, string, string, error) {
