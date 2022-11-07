@@ -27,6 +27,7 @@ func NewKpackCmd() *cobra.Command {
 			fmt.Println("::debug:: gitSha", c.GitSha)
 			fmt.Println("::debug:: env", c.Env)
 			fmt.Println("::debug:: serviceAccountName", c.ServiceAccountName)
+			fmt.Println("::debug:: clusterBuilder", c.ClusterBuilderName)
 
 			c.Build()
 		},
@@ -49,6 +50,7 @@ func NewKpackCmd() *cobra.Command {
 	_ = kpackCmd.MarkFlagRequired("tag")
 	kpackCmd.Flags().StringVarP(&c.Env, "env-vars", "e", "", "list of build time environment variables")
 	kpackCmd.Flags().StringVarP(&c.ServiceAccountName, "service-account-name", "a", "", "service account name that will be used for credential lookup")
+	kpackCmd.Flags().StringVarP(&c.ServiceAccountName, "cluster-builder", "b", "", "cluster builder to use for the build")
 
 	kpackCmd.Flags().StringVarP(&c.ActionOutput, "github-action-output", "o", "", "location to store output of the build")
 	_ = kpackCmd.MarkFlagRequired("github-action-output")
