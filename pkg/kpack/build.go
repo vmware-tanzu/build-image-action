@@ -29,11 +29,6 @@ import (
 
 const sleepTimeBetweenChecks = 3
 
-var (
-	v1alpha2Builds         = schema.GroupVersionResource{Group: "kpack.io", Version: "v1alpha2", Resource: "builds"}
-	v1alpha2ClusterBuilder = schema.GroupVersionResource{Group: "kpack.io", Version: "v1alpha2", Resource: "clusterbuilders"}
-)
-
 type Config struct {
 	CaCert    string
 	Token     string
@@ -82,19 +77,22 @@ func (c *Config) Build() {
 	restMapper.Add(schema.GroupVersionKind{Group: "kpack.io", Version: "v1alpha2", Kind: "ClusterBuilder"}, meta.RESTScopeRoot)
 	restMapper.Add(schema.GroupVersionKind{Group: "kpack.io", Version: "v1alpha2", Kind: "Build"}, meta.RESTScopeNamespace)
 
-	client, err := client.New(config, client.Options{Mapper: restMapper})
+	cl, err := client.New(config, client.Options{Mapper: restMapper})
 	if err != nil {
 		panic(err)
 	}
 
-	v1alpha2.AddToScheme(scheme.Scheme)
+	err = v1alpha2.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		panic(err)
 	}
 
-	clusterBuilder, runImage, err := GetClusterBuilderStatus(ctx, client, c.ClusterBuilderName)
+	clusterBuilder, runImage, err := GetClusterBuilderStatus(ctx, cl, c.ClusterBuilderName)
 	if err != nil {
 		panic(err)
 	}
@@ -133,7 +131,7 @@ func (c *Config) Build() {
 		},
 	}
 
-	name, err := CreateBuild(ctx, client, build)
+	name, err := CreateBuild(ctx, cl, build)
 	if err != nil {
 		panic(err)
 	}
@@ -141,7 +139,7 @@ func (c *Config) Build() {
 	for {
 		var podName string
 		var statusMessage string
-		podName, _, statusMessage, err = GetBuildStatus(ctx, client, c.Namespace, name)
+		podName, _, statusMessage, err = GetBuildStatus(ctx, cl, c.Namespace, name)
 		if err != nil {
 			panic(err)
 		}
@@ -164,7 +162,7 @@ func (c *Config) Build() {
 		fmt.Printf("::debug:: checking if build is complete...\n")
 		var latestImage string
 		var statusMessage string
-		_, latestImage, statusMessage, err = GetBuildStatus(ctx, client, c.Namespace, name)
+		_, latestImage, statusMessage, err = GetBuildStatus(ctx, cl, c.Namespace, name)
 		if err != nil {
 			panic(err)
 		}
