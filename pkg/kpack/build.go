@@ -47,6 +47,7 @@ type Config struct {
 	Tag                string
 	Env                string
 	ServiceAccountName string
+	ClusterBuilderName string
 
 	ActionOutput string
 }
@@ -93,7 +94,7 @@ func (c *Config) Build() {
 		panic(err)
 	}
 
-	clusterBuilder, runImage, err := GetClusterBuilderStatus(ctx, client, "default")
+	clusterBuilder, runImage, err := GetClusterBuilder(ctx, client, c.ClusterBuilderName)
 	if err != nil {
 		panic(err)
 	}
