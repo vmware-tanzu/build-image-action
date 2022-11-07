@@ -6,6 +6,8 @@ import (
 	"github.com/vmware-tanzu/build-image-action/pkg/kpack"
 )
 
+var TIMEOUT = 3600
+
 func init() {
 	rootCmd.AddCommand(NewKpackCmd())
 }
@@ -50,7 +52,7 @@ func NewKpackCmd() *cobra.Command {
 	kpackCmd.Flags().StringVarP(&c.Env, "env-vars", "e", "", "list of build time environment variables")
 	kpackCmd.Flags().StringVarP(&c.ServiceAccountName, "service-account-name", "a", "default", "service account name that will be used for credential lookup")
 	kpackCmd.Flags().StringVarP(&c.ClusterBuilderName, "cluster-builder", "b", "default", "cluster builder to use for the build")
-	kpackCmd.Flags().IntVar(&c.Timeout, "timeout", 3600, "max active time that the pod can run for in seconds")
+	kpackCmd.Flags().IntVar(&c.Timeout, "timeout", TIMEOUT, "max active time that the pod can run for in seconds")
 
 	kpackCmd.Flags().StringVarP(&c.ActionOutput, "github-action-output", "o", "", "location to store output of the build")
 	_ = kpackCmd.MarkFlagRequired("github-action-output")
