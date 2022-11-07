@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/vmware-tanzu/build-image-action/pkg"
 	"github.com/vmware-tanzu/build-image-action/pkg/logs"
 	"github.com/vmware-tanzu/build-image-action/pkg/version"
@@ -58,23 +59,44 @@ func CreateBuild(ctx context.Context, client dynamic.Interface, namespace string
 	return created.GetName(), nil
 }
 
-func GetBuild(ctx context.Context, client dynamic.Interface, namespace string, build string) (string, string, error) {
+func GetBuild(ctx context.Context, client dynamic.Interface, namespace string, build string) (string, string, string, error) {
 	got, err := client.Resource(v1alpha2Builds).Namespace(namespace).Get(ctx, build, metav1.GetOptions{})
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	podName, _, err := unstructured.NestedString(got.Object, "status", "podName")
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	latestImage, _, err := unstructured.NestedString(got.Object, "status", "latestImage")
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
-	return podName, latestImage, nil
+	conditions, _, err := unstructured.NestedSlice(got.Object, "status", "conditions")
+	if err != nil {
+		return "", "", "", err
+	}
+
+	var statusMessage string
+	for _, condition := range conditions {
+		conditionObj, ok := condition.(map[string]interface{})
+		if !ok {
+			return "", "", "", errors.New("unable to cast condition to map[string]interface{}")
+		}
+		if conditionObj["type"] == "Succeeded" {
+			if conditionObj["status"] == "False" {
+				statusMessage, ok = conditionObj["message"].(string)
+				if !ok {
+					return "", "", "", errors.New("unable to cast condition message to string")
+				}
+			}
+		}
+	}
+
+	return podName, latestImage, statusMessage, nil
 }
 
 func main() {
@@ -179,9 +201,14 @@ func main() {
 
 	for {
 		var podName string
-		podName, _, err = GetBuild(ctx, dynamicClient, namespace, name)
+		var statusMessage string
+		podName, _, statusMessage, err = GetBuild(ctx, dynamicClient, namespace, name)
 		if err != nil {
 			panic(err)
+		}
+
+		if statusMessage != "" {
+			panic(statusMessage)
 		}
 
 		if podName != "" {
@@ -197,12 +224,15 @@ func main() {
 	for {
 		fmt.Printf("::debug:: checking if build is complete...\n")
 		var latestImage string
-		_, latestImage, err = GetBuild(ctx, dynamicClient, namespace, name)
+		var statusMessage string
+		_, latestImage, statusMessage, err = GetBuild(ctx, dynamicClient, namespace, name)
 		if err != nil {
 			panic(err)
 		}
 
-		// FIXME handle the failure scenario here
+		if statusMessage != "" {
+			panic(statusMessage)
+		}
 
 		if latestImage != "" {
 			fmt.Printf("::debug:: build is complete\n")
