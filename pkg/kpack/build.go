@@ -20,6 +20,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"knative.dev/pkg/ptr"
 	"log"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,6 +44,7 @@ type Config struct {
 	Env                string
 	ServiceAccountName string
 	ClusterBuilderName string
+	Timeout            int64
 
 	ActionOutput string
 }
@@ -110,7 +112,8 @@ func (c *Config) Build() {
 			},
 		},
 		Spec: v1alpha2.BuildSpec{
-			Tags: []string{c.Tag},
+			ActiveDeadlineSeconds: ptr.Int64(c.Timeout),
+			Tags:                  []string{c.Tag},
 			Builder: v1alpha1.BuildBuilderSpec{
 				Image: clusterBuilder,
 			},
