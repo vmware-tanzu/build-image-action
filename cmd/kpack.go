@@ -29,8 +29,12 @@ func NewKpackCmd() *cobra.Command {
 			fmt.Println("::debug:: serviceAccountName", c.ServiceAccountName)
 			fmt.Println("::debug:: clusterBuilder", c.ClusterBuilderName)
 			fmt.Println("::debug:: timeout", c.Timeout)
+			fmt.Println("::debug:: cleanup", c.Cleanup)
 
-			c.Build()
+			err := c.Build()
+			if err != nil {
+				fmt.Printf("::debug:: error creating build %+v\n", err)
+			}
 		},
 	}
 
@@ -56,6 +60,8 @@ func NewKpackCmd() *cobra.Command {
 
 	kpackCmd.Flags().StringVarP(&c.ActionOutput, "github-action-output", "o", "", "location to store output of the build")
 	_ = kpackCmd.MarkFlagRequired("github-action-output")
+
+	kpackCmd.Flags().BoolVar(&c.Cleanup, "cleanup", true, "delete build resource")
 
 	return kpackCmd
 }

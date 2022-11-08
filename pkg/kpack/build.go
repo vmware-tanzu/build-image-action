@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
+	"github.com/pkg/errors"
 	"github.com/vmware-tanzu/build-image-action/pkg"
 	"github.com/vmware-tanzu/build-image-action/pkg/logs"
 	"github.com/vmware-tanzu/build-image-action/pkg/version"
@@ -47,12 +48,13 @@ type Config struct {
 	Timeout            int64
 
 	ActionOutput string
+	Cleanup      bool
 }
 
-func (c *Config) Build() {
+func (c *Config) Build() error {
 	decodedCaCert, err := base64.StdEncoding.DecodeString(c.CaCert)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	var config *rest.Config
@@ -61,7 +63,7 @@ func (c *Config) Build() {
 		// assume we are currently running inside the cluster we want to create the image resource in
 		config, err = rest.InClusterConfig()
 		if err != nil {
-			panic(err)
+			return err
 		}
 	} else {
 		config = &rest.Config{
@@ -81,22 +83,22 @@ func (c *Config) Build() {
 
 	cl, err := client.New(config, client.Options{Mapper: restMapper})
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	err = v1alpha2.AddToScheme(scheme.Scheme)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	clusterBuilder, runImage, err := GetClusterBuilderStatus(ctx, cl, c.ClusterBuilderName)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	build := &v1alpha2.Build{
@@ -140,57 +142,79 @@ func (c *Config) Build() {
 	}
 
 	name, err := CreateBuild(ctx, cl, build)
+	if c.Cleanup {
+		defer DeleteBuild(ctx, cl, c.Namespace, name)
+	}
+
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	for {
-		var podName string
-		var statusMessage string
-		podName, _, statusMessage, err = GetBuildStatus(ctx, cl, c.Namespace, name)
-		if err != nil {
-			panic(err)
-		}
-
-		if statusMessage != "" {
-			panic(statusMessage)
-		}
-
-		if podName != "" {
-			fmt.Printf("::debug:: build has started\n")
-			fmt.Printf("::debug:: Building... podName=%s, starting streaming\n", podName)
-			StreamPodLogs(ctx, clientset, c.Namespace, podName)
-			break
-		}
-
-		time.Sleep(sleepTimeBetweenChecks * time.Second)
+	err = WaitForBuildToStart(ctx, cl, clientset, c.Namespace, name)
+	if err != nil {
+		return err
 	}
 
+	latestImage, err := WaitForBuildToComplete(ctx, cl, c.Namespace, name)
+	if err != nil {
+		return err
+	}
+
+	err = Append(c.ActionOutput, fmt.Sprintf("name=%s\n", latestImage))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func WaitForBuildToComplete(ctx context.Context, cl client.Client, namespace string, name string) (string, error) {
+	var latestImage string
 	for {
 		fmt.Printf("::debug:: checking if build is complete...\n")
-		var latestImage string
 		var statusMessage string
-		_, latestImage, statusMessage, err = GetBuildStatus(ctx, cl, c.Namespace, name)
+		var err error
+		_, latestImage, statusMessage, err = GetBuildStatus(ctx, cl, namespace, name)
 		if err != nil {
-			panic(err)
+			return "", err
 		}
 
 		if statusMessage != "" {
-			panic(statusMessage)
+			return "", errors.New(statusMessage)
 		}
 
 		if latestImage != "" {
 			fmt.Printf("::debug:: build is complete\n")
-
-			err = Append(c.ActionOutput, fmt.Sprintf("name=%s\n", latestImage))
-			if err != nil {
-				panic(err)
-			}
+			fmt.Printf("::debug:: latestImage=%s\n", latestImage)
 			break
 		}
 
 		time.Sleep(sleepTimeBetweenChecks * time.Second)
 	}
+	return latestImage, nil
+}
+
+func WaitForBuildToStart(ctx context.Context, cl client.Client, clientset *kubernetes.Clientset, namespace string, name string) error {
+	for {
+		podName, _, statusMessage, err := GetBuildStatus(ctx, cl, namespace, name)
+		if err != nil {
+			return err
+		}
+
+		if statusMessage != "" {
+			return errors.New(statusMessage)
+		}
+
+		if podName != "" {
+			fmt.Printf("::debug:: build has started\n")
+			fmt.Printf("::debug:: building... podName=%s, starting streaming\n", podName)
+			StreamPodLogs(ctx, clientset, namespace, podName)
+			break
+		}
+
+		time.Sleep(sleepTimeBetweenChecks * time.Second)
+	}
+	return nil
 }
 
 func GetClusterBuilderStatus(ctx context.Context, cl client.Client, name string) (string, string, error) {
@@ -214,6 +238,23 @@ func CreateBuild(ctx context.Context, cl client.Client, build *v1alpha2.Build) (
 	}
 
 	return build.GetName(), nil
+}
+
+func DeleteBuild(ctx context.Context, cl client.Client, namespace string, name string) {
+	fmt.Printf("::debug:: deleting build %s/%s\n", namespace, name)
+
+	build := &v1alpha2.Build{}
+	err := cl.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, build)
+	if err != nil {
+		fmt.Printf("::debug:: error getting build: %+v\n", err)
+		return
+	}
+
+	err = cl.Delete(ctx, build)
+	if err != nil {
+		fmt.Printf("::debug:: error deleting build %+v\n", err)
+		return
+	}
 }
 
 func GetBuildStatus(ctx context.Context, cl client.Client, namespace string, name string) (string, string, string, error) {
@@ -265,7 +306,7 @@ func Append(file string, name string) error {
 		return err
 	}
 	defer f.Close()
-	if _, err := f.WriteString(name); err != nil {
+	if _, err = f.WriteString(name); err != nil {
 		return err
 	}
 	return nil
