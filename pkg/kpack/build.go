@@ -192,6 +192,8 @@ func GetClusterBuilderStatus(ctx context.Context, cl client.Client, name string)
 		return "", "", err
 	}
 
+	fmt.Printf("::debug:: using cluster builder image %s\n", builder.Status.LatestImage)
+	fmt.Printf("::debug:: using cluster builder run image %s\n", builder.Status.Stack.RunImage)
 	return builder.Status.LatestImage, builder.Status.Stack.RunImage, nil
 }
 
