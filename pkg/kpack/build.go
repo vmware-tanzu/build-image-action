@@ -6,29 +6,28 @@ package kpack
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	"github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/vmware-tanzu/build-image-action/pkg"
 	"github.com/vmware-tanzu/build-image-action/pkg/logs"
 	"github.com/vmware-tanzu/build-image-action/pkg/version"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"log"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"time"
 )
 
 const sleepTimeBetweenChecks = 3
-
-var (
-	v1alpha2Builds         = schema.GroupVersionResource{Group: "kpack.io", Version: "v1alpha2", Resource: "builds"}
-	v1alpha2ClusterBuilder = schema.GroupVersionResource{Group: "kpack.io", Version: "v1alpha2", Resource: "clusterbuilders"}
-)
 
 type Config struct {
 	CaCert    string
@@ -74,55 +73,65 @@ func (c *Config) Build() {
 
 	ctx := context.Background()
 
-	dynamicClient, err := dynamic.NewForConfig(config)
+	restMapper := meta.NewDefaultRESTMapper([]schema.GroupVersion{})
+	restMapper.Add(schema.GroupVersionKind{Group: "kpack.io", Version: "v1alpha2", Kind: "ClusterBuilder"}, meta.RESTScopeRoot)
+	restMapper.Add(schema.GroupVersionKind{Group: "kpack.io", Version: "v1alpha2", Kind: "Build"}, meta.RESTScopeNamespace)
+
+	cl, err := client.New(config, client.Options{Mapper: restMapper})
 	if err != nil {
 		panic(err)
 	}
 
-	client, err := kubernetes.NewForConfig(config)
+	err = v1alpha2.AddToScheme(scheme.Scheme)
 	if err != nil {
 		panic(err)
 	}
 
-	clusterBuilder, runImage, err := GetClusterBuilder(ctx, dynamicClient, c.ClusterBuilderName)
+	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		panic(err)
 	}
 
-	build := &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"apiVersion": "kpack.io/v1alpha2",
-			"kind":       "Build",
-			"metadata": map[string]interface{}{
-				"generateName": strings.ReplaceAll(c.GitRepo, "/", "-") + "-",
-				"namespace":    c.Namespace,
-				"annotations": map[string]interface{}{
-					"app.kubernetes.io/managed-by": "vmware-tanzu/build-image-action " + version.Version,
-				},
+	clusterBuilder, runImage, err := GetClusterBuilderStatus(ctx, cl, c.ClusterBuilderName)
+	if err != nil {
+		panic(err)
+	}
+
+	build := &v1alpha2.Build{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "build",
+			APIVersion: "kpack.io/v1alpha2",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: strings.ReplaceAll(c.GitRepo, "/", "-") + "-",
+			Namespace:    c.Namespace,
+			Annotations: map[string]string{
+				"app.kubernetes.io/managed-by": "vmware-tanzu/build-image-action " + version.Version,
 			},
-			"spec": map[string]interface{}{
-				"builder": map[string]interface{}{
-					"image": clusterBuilder,
-				},
-				"runImage": map[string]interface{}{
-					"image": runImage,
-				},
-				"serviceAccountName": c.ServiceAccountName,
-				"source": map[string]interface{}{
-					"git": map[string]interface{}{
-						"url":      fmt.Sprintf("%s/%s", c.GitServer, c.GitRepo),
-						"revision": c.GitSha,
-					},
-				},
-				"tags": []string{
-					c.Tag,
-				},
-				"env": KeyValueArray(pkg.ParseEnvVars(c.Env)),
+		},
+		Spec: v1alpha2.BuildSpec{
+			Tags: []string{c.Tag},
+			Builder: v1alpha1.BuildBuilderSpec{
+				Image: clusterBuilder,
 			},
+			ServiceAccountName: c.ServiceAccountName,
+			Source: v1alpha1.SourceConfig{
+				Git: &v1alpha1.Git{
+					URL:      fmt.Sprintf("%s/%s", c.GitServer, c.GitRepo),
+					Revision: c.GitSha,
+				},
+				Blob:     nil,
+				Registry: nil,
+				SubPath:  "",
+			},
+			RunImage: v1alpha2.BuildSpecImage{
+				Image: runImage,
+			},
+			Env: KeyValueArray(pkg.ParseEnvVars(c.Env)),
 		},
 	}
 
-	name, err := CreateBuild(ctx, dynamicClient, c.Namespace, build)
+	name, err := CreateBuild(ctx, cl, build)
 	if err != nil {
 		panic(err)
 	}
@@ -130,7 +139,7 @@ func (c *Config) Build() {
 	for {
 		var podName string
 		var statusMessage string
-		podName, _, statusMessage, err = GetBuild(ctx, dynamicClient, c.Namespace, name)
+		podName, _, statusMessage, err = GetBuildStatus(ctx, cl, c.Namespace, name)
 		if err != nil {
 			panic(err)
 		}
@@ -142,7 +151,7 @@ func (c *Config) Build() {
 		if podName != "" {
 			fmt.Printf("::debug:: build has started\n")
 			fmt.Printf("::debug:: Building... podName=%s, starting streaming\n", podName)
-			StreamPodLogs(ctx, client, c.Namespace, podName)
+			StreamPodLogs(ctx, clientset, c.Namespace, podName)
 			break
 		}
 
@@ -153,7 +162,7 @@ func (c *Config) Build() {
 		fmt.Printf("::debug:: checking if build is complete...\n")
 		var latestImage string
 		var statusMessage string
-		_, latestImage, statusMessage, err = GetBuild(ctx, dynamicClient, c.Namespace, name)
+		_, latestImage, statusMessage, err = GetBuildStatus(ctx, cl, c.Namespace, name)
 		if err != nil {
 			panic(err)
 		}
@@ -176,78 +185,53 @@ func (c *Config) Build() {
 	}
 }
 
-func GetClusterBuilder(ctx context.Context, client dynamic.Interface, name string) (string, string, error) {
-	clusterBuilder, err := client.Resource(v1alpha2ClusterBuilder).Get(ctx, name, metav1.GetOptions{})
+func GetClusterBuilderStatus(ctx context.Context, cl client.Client, name string) (string, string, error) {
+	builder := &v1alpha2.ClusterBuilder{}
+	err := cl.Get(ctx, types.NamespacedName{Name: name}, builder)
 	if err != nil {
 		return "", "", err
 	}
 
-	clusterBuilderName, _, err := unstructured.NestedString(clusterBuilder.Object, "status", "latestImage")
-	if err != nil {
-		return "", "", err
-	}
-
-	runImage, _, err := unstructured.NestedString(clusterBuilder.Object, "status", "stack", "runImage")
-	if err != nil {
-		return "", "", err
-	}
-	return clusterBuilderName, runImage, nil
+	return builder.Status.LatestImage, builder.Status.Stack.RunImage, nil
 }
 
-func CreateBuild(ctx context.Context, client dynamic.Interface, namespace string, build *unstructured.Unstructured) (string, error) {
+func CreateBuild(ctx context.Context, cl client.Client, build *v1alpha2.Build) (string, error) {
 	fmt.Printf("::debug:: creating resource %+v\n", build)
-	created, err := client.Resource(v1alpha2Builds).Namespace(namespace).Create(ctx, build, metav1.CreateOptions{})
+
+	err := cl.Create(ctx, build)
 	if err != nil {
 		return "", err
 	}
 
-	return created.GetName(), nil
+	return build.GetName(), nil
 }
 
-func GetBuild(ctx context.Context, client dynamic.Interface, namespace string, build string) (string, string, string, error) {
-	got, err := client.Resource(v1alpha2Builds).Namespace(namespace).Get(ctx, build, metav1.GetOptions{})
-	if err != nil {
-		return "", "", "", err
-	}
-
-	podName, _, err := unstructured.NestedString(got.Object, "status", "podName")
-	if err != nil {
-		return "", "", "", err
-	}
-
-	latestImage, _, err := unstructured.NestedString(got.Object, "status", "latestImage")
-	if err != nil {
-		return "", "", "", err
-	}
-
-	conditions, _, err := unstructured.NestedSlice(got.Object, "status", "conditions")
+func GetBuildStatus(ctx context.Context, cl client.Client, namespace string, name string) (string, string, string, error) {
+	build := &v1alpha2.Build{}
+	err := cl.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, build)
 	if err != nil {
 		return "", "", "", err
 	}
 
 	var statusMessage string
-	for _, condition := range conditions {
-		conditionObj, ok := condition.(map[string]interface{})
-		if !ok {
-			return "", "", "", errors.New("unable to cast condition to map[string]interface{}")
-		}
-		if conditionObj["type"] == "Succeeded" {
-			if conditionObj["status"] == "False" {
-				statusMessage, ok = conditionObj["message"].(string)
-				if !ok {
-					return "", "", "", errors.New("unable to cast condition message to string")
-				}
+	for _, condition := range build.Status.Conditions {
+		if condition.Type == "Succeeded" {
+			if condition.Status == "False" {
+				statusMessage = condition.Message
 			}
 		}
 	}
 
-	return podName, latestImage, statusMessage, nil
+	return build.Status.PodName, build.Status.LatestImage, statusMessage, nil
 }
 
-func KeyValueArray(vars map[string]string) []map[string]string {
-	var values []map[string]string
+func KeyValueArray(vars map[string]string) []corev1.EnvVar {
+	var values []corev1.EnvVar
 	for k, v := range vars {
-		values = append(values, map[string]string{"name": k, "value": v})
+		values = append(values, corev1.EnvVar{
+			Name:  k,
+			Value: v,
+		})
 	}
 
 	fmt.Printf("::debug:: parsed environment variables to %s\n", values)
