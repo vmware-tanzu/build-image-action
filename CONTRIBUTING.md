@@ -34,7 +34,7 @@ We welcome many types of contributions and not all of them need a Pull request. 
    ```
 1. Create a secret with push credentials for the docker registry that you plan on publishing OCI images to with kpack
     ```bash
-   kubectl create secret docker-registry kpack-registry-credentials \                                                130 ↵ emjohnson@emjohnson-a03
+   kubectl create secret docker-registry kpack-registry-credentials \
     --docker-username=_json_key \
     --docker-password="$(cat key.json)" \
     --docker-server=gcr.io \
