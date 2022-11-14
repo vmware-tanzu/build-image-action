@@ -6,7 +6,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/pivotal/kpack v0.7.2
 	github.com/pkg/errors v0.9.1
-	github.com/spf13/cobra v1.5.0
+	github.com/spf13/cobra v1.6.1
 	github.com/stern/stern v1.22.0
 	k8s.io/api v0.25.4
 	k8s.io/apimachinery v0.25.4
