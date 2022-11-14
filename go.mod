@@ -8,9 +8,10 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.5.0
 	github.com/stern/stern v1.22.0
-	k8s.io/api v0.25.3
-	k8s.io/apimachinery v0.25.3
+	k8s.io/api v0.25.4
+	k8s.io/apimachinery v0.25.4
 	k8s.io/client-go v0.25.3
+	knative.dev/pkg v0.0.0-20220816153547-f78a00694307
 	sigs.k8s.io/controller-runtime v0.13.1
 )
 
@@ -65,7 +66,6 @@ require (
 	k8s.io/klog/v2 v2.80.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220928191237-829ce0c27909 // indirect
 	k8s.io/utils v0.0.0-20220922133306-665eaaec4324 // indirect
-	knative.dev/pkg v0.0.0-20220816153547-f78a00694307 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
