@@ -26,11 +26,12 @@ kubectl apply -f https://raw.githubusercontent.com/vmware-tanzu/build-image-acti
 Then to access the values:
 
 ```
-SECRET=$(kubectl get sa github-actions -oyaml -n dev | yq '.secrets[0].name')
+DEV_NAMESPACE=dev
+SECRET=$(kubectl get sa github-actions -oyaml -n $DEV_NAMESPACE | yq '.secrets[0].name')
 
-CA_CERT=$(kubectl get secret $SECRET -oyaml -n dev | yq '.data."ca.crt"')
-NAMESPACE=$(kubectl get secret $SECRET -oyaml -n dev | ksd | yq .stringData.namespace)
-TOKEN=$(kubectl get secret $SECRET -oyaml -n dev | ksd | yq .stringData.token)
+CA_CERT=$(kubectl get secret $SECRET -oyaml -n $DEV_NAMESPACE | yq '.data."ca.crt"')
+NAMESPACE=$(kubectl get secret $SECRET -oyaml -n $DEV_NAMESPACE | yq .data.namespace | base64 -d)
+TOKEN=$(kubectl get secret $SECRET -oyaml -n $DEV_NAMESPACE | yq .data.token | base64 -d)
 SERVER=$(kubectl config view --minify | yq '.clusters[0].cluster.server')
 ```
 
