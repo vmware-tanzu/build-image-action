@@ -53,8 +53,11 @@ metadata:
   namespace: dev
 rules:
 - apiGroups: ['']
-  resources: ['pods', 'pods/log']
+  resources: ['pods']
   verbs: ['get', 'watch', 'list']
+- apiGroups: ['']
+  resources: ['pods/log']
+  verbs: ['get']
 - apiGroups: ['kpack.io']
   resources:
   - builds

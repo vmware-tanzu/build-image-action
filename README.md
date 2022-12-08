@@ -12,9 +12,34 @@ This GitHub Action creates a TBS Build on the given cluster.
 
 ### Setup
 
-In order to use this action a service account will need to exist inside TAP that has permissions to access the required
-resources. The
-[example file](https://github.com/vmware-tanzu/build-image-action/blob/main/config/rbac.yaml) contains the minimum
+In order to use this action there are two things that need to be configured:
+
+1. Ensure that the GitHub action runner has access to the kubernetes API Server.
+1. Configure a service account that has the required permissions.
+
+#### Access to the kubernetes API server
+
+The GitHub action talks directly to the kubernetes API server, so if you are running this on github.com with the default action runners
+you'll need to ensure your API server is accessable from GitHubs [IP ranges](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-githubs-ip-addresses). 
+Alternatively it may be possible to runner the action on a custom runner within your firewall (with access to the TAP cluster).
+
+#### Permissions Required
+
+The minimum permissions required on the TBS cluster are documented below:
+
+```
+ClusterRole
+ └ kpack.io
+   └ clusterbuilders verbs=[get]
+Role (developer namespace)
+ ├ ''
+ │ ├ pods verbs=[get watch list] ✔
+ │ └ pods/log verbs=[get] ✔
+ └ kpack.io
+   └ builds verbs=[get watch list create delete] ✔
+```
+
+The [example file](https://github.com/vmware-tanzu/build-image-action/blob/main/config/rbac.yaml) contains the minimum
 required permissions.
 
 To apply this file to a namespace called `dev`:
