@@ -38,6 +38,10 @@ inputs:
     description: 'Max active time that the pod can run for in seconds'
     required: false
     default: 3600
+  cleanup:
+    description: 'Should the action cleanup any generated resources on completion'
+    required: false
+    default: true
 outputs:
   name:
     description: 'The fully qualified name of the built image including version'

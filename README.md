@@ -80,9 +80,11 @@ gh secret set SERVER --app actions --body "$SERVER"
 #### Image Configuration
 
 - `destination`: _(required)_
-- `env`:
+- `env`: A list of environment variables to be passed to the build, see below for the format
 - `serviceAccountName`: Name of the service account in the namespace, defaults to `default`
 - `clusterBuilder`: Name of the cluster builder to use, defaults to `default`
+- `timeout`: Max active time that the pod can run for in seconds, defaults to `3600`
+- `cleanup`: Should the action cleanup any generated resources on completion, defaults to `true`
 
 #### Basic Configuration
 
