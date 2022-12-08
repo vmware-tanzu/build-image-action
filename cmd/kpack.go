@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/vmware-tanzu/build-image-action/pkg/kpack"
+	"os"
 )
 
 var TIMEOUT = 3600
@@ -33,7 +34,8 @@ func NewKpackCmd() *cobra.Command {
 
 			err := c.Build()
 			if err != nil {
-				fmt.Printf("::debug:: error creating build %+v\n", err)
+				fmt.Printf("::error:: creating build: %+v\n", err)
+				os.Exit(1)
 			}
 		},
 	}
