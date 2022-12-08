@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/vmware-tanzu/build-image-action/pkg/kpack"
+	"os"
 )
 
 var TIMEOUT = 3600

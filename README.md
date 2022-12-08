@@ -64,7 +64,7 @@ gh secret set SERVER --app actions --body "$SERVER"
 ```yaml
 - name: Build Image
   id: build
-  uses: vmware-tanzu/build-image-action@v1
+  uses: vmware-tanzu/build-image-action@v1-alpha
   with:
     # auth
     server: ${{ secrets.SERVER }}
