@@ -7,8 +7,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "builder",
-	Short: "Create build resources on cluster",
+	Use:          "builder",
+	Short:        "Create build resources on cluster",
+	SilenceUsage: true,
 }
 
 func Execute() {
