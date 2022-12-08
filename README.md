@@ -89,6 +89,11 @@ gh secret set SERVER --app actions --body "$SERVER"
     echo "${{ steps.build.outputs.name }}"
 ```
 
+## Debugging
+
+To run this action in "debug" mode, add a secret called `ACTIONS_STEP_DEBUG` with the value set to `true` as
+documented in the [GitHub Action Docs](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/enabling-debug-logging).
+
 ## Documentation
 
 TODO
