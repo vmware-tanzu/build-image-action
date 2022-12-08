@@ -246,13 +246,13 @@ func DeleteBuild(ctx context.Context, cl client.Client, namespace string, name s
 	build := &v1alpha2.Build{}
 	err := cl.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, build)
 	if err != nil {
-		fmt.Printf("::debug:: error getting build: %+v\n", err)
+		fmt.Printf("::warning:: error getting build: %+v\n", err)
 		return
 	}
 
 	err = cl.Delete(ctx, build)
 	if err != nil {
-		fmt.Printf("::debug:: error deleting build %+v\n", err)
+		fmt.Printf("::warning:: error deleting build %+v\n", err)
 		return
 	}
 }
