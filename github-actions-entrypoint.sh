@@ -14,6 +14,5 @@ set -euo pipefail
   --env-vars="${INPUT_ENV}" \
   --service-account-name="${INPUT_SERVICEACCOUNTNAME}" \
   --cluster-builder="${INPUT_CLUSTERBUILDER}" \
-  --timeout="${INPUT_TIMEOUT}"
-
-
+  --timeout="${INPUT_TIMEOUT}" \
+  --cleanup="${INPUT_CLEANUP}"
