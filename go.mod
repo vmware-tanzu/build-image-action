@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/fatih/color v1.13.0
-	github.com/pivotal/kpack v0.9.1
+	github.com/pivotal/kpack v0.10.0
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.6.1
 	github.com/stern/stern v1.22.0
