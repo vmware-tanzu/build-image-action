@@ -9,7 +9,7 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/stern/stern v1.22.0
 	k8s.io/api v0.26.0
-	k8s.io/apimachinery v0.26.0
+	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.0
 	knative.dev/pkg v0.0.0-20221005141429-8cacac2ea6d7
 	sigs.k8s.io/controller-runtime v0.14.1
