@@ -1,4 +1,21 @@
 linters-settings:
+  depguard:
+    rules:
+      main:
+        files:
+          - $all
+          - "!$test"
+        allow:
+          - $gostd
+          - github.com/pivotal
+          - github.com/spf13/cobra
+          - github.com/vmware-tanzu
+          - github.com/pkg/errors
+          - github.com/stern/stern
+          - github.com/fatih/color
+          - k8s.io
+          - knative.dev
+          - sigs.k8s.io
   goconst:
     min-len: 2
     min-occurrences: 2
