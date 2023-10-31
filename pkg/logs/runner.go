@@ -6,10 +6,11 @@ package logs
 import (
 	"context"
 	"fmt"
+	"sync"
+
 	"github.com/pkg/errors"
 	"github.com/stern/stern/stern"
 	"k8s.io/client-go/kubernetes"
-	"sync"
 )
 
 var tails = make(map[string]*stern.Tail)
@@ -91,11 +92,10 @@ func Run(ctx context.Context, clientSet *kubernetes.Clientset, config *stern.Con
 			if tail, ok := getTail(targetID); ok {
 				if tail.IsActive() {
 					continue
-				} else {
-					// fmt.Printf("::endgroup::\n")
-					tail.Close()
-					clearTail(targetID)
 				}
+				// fmt.Printf("::endgroup::\n")
+				tail.Close()
+				clearTail(targetID)
 			}
 
 			// fmt.Printf("::group::%s\n", p.Container)
