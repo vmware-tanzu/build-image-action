@@ -11,7 +11,7 @@ COPY . ./
 
 RUN go build -trimpath -ldflags "-X github.com/vmware-tanzu/build-image-action/pkg/version.Version=$VERSION" -o builder main.go
 
-FROM --platform=${BUILDPLATFORM} ubuntu:23.04
+FROM --platform=${BUILDPLATFORM} ubuntu:24.04
 
 COPY --from=build-stage0 /root/builder /usr/bin/builder
 COPY github-actions-entrypoint.sh /usr/bin/github-actions-entrypoint.sh
